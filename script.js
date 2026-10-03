@@ -87,8 +87,6 @@
   }
 
   const db=firebase.database();
-  const storage=firebase.storage();
-  const storageRootRef=storage.ref();
 
   const messagesRef=db.ref('messages');
   const bannedRef=db.ref('banned');
@@ -119,30 +117,32 @@
   uploadBtn.addEventListener('click',async()=>{
     if(!selectedFile)return;
     const username=(userEl.value||'Anonymous').trim();
-    const safeName=selectedFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    const path=`uploads/${Date.now()}_${Math.random().toString(36).slice(2,6)}_${safeName}`;
-    const fileRef=storageRootRef.child(path);
 
     progressContainer.style.display='block';
     progressBar.style.width='0%';
     progressLabel.textContent=`uploading ${selectedFile.name}...`;
     uploadBtn.style.display='none';
 
-    const uploadTask=fileRef.put(selectedFile);
+    const formData=new FormData();
+    formData.append('file',selectedFile);
+    formData.append('upload_preset','rbx_uploads');
+    formData.append('resource_type','auto');
 
-    uploadTask.on('state_changed',
-      snapshot=>{
-        const pct=Math.round((snapshot.bytesTransferred/snapshot.totalBytes)*100);
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',`https://api.cloudinary.com/v1_1/kz95ob26/auto/upload`);
+
+    xhr.upload.addEventListener('progress',e=>{
+      if(e.lengthComputable){
+        const pct=Math.round((e.loaded/e.total)*100);
         progressBar.style.width=pct+'%';
-        progressLabel.textContent=`[${pct}%] ${selectedFile.name} — ${formatBytes(snapshot.bytesTransferred)} / ${formatBytes(snapshot.totalBytes)}`;
-      },
-      err=>{
-        progressLabel.textContent=`upload failed lol: ${err.message}`;
-        setTimeout(()=>{progressContainer.style.display='none';},4000);
-        uploadBtn.style.display='block';
-      },
-      async()=>{
-        const url=await uploadTask.snapshot.ref.getDownloadURL();
+        progressLabel.textContent=`[${pct}%] ${selectedFile.name} — ${formatBytes(e.loaded)} / ${formatBytes(e.total)}`;
+      }
+    });
+
+    xhr.addEventListener('load',async()=>{
+      if(xhr.status===200){
+        const res=JSON.parse(xhr.responseText);
+        const url=res.secure_url;
         progressLabel.textContent=`done: ${selectedFile.name}`;
         setTimeout(()=>{progressContainer.style.display='none';},2000);
 
@@ -169,8 +169,20 @@
         selectedFile=null;
         fileInput.value='';
         fileNameDisplay.textContent='nothing picked';
+      } else {
+        progressLabel.textContent=`upload failed lol: ${xhr.status}`;
+        setTimeout(()=>{progressContainer.style.display='none';},4000);
+        uploadBtn.style.display='block';
       }
-    );
+    });
+
+    xhr.addEventListener('error',()=>{
+      progressLabel.textContent=`upload failed lol: network error`;
+      setTimeout(()=>{progressContainer.style.display='none';},4000);
+      uploadBtn.style.display='block';
+    });
+
+    xhr.send(formData);
   });
 
   // ── ALT / FINGERPRINT DETECTION ─────────────────────────────────
