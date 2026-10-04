@@ -99,6 +99,8 @@
   const fingerprintsRef=db.ref('fingerprints');
 
   // ── FILE UPLOAD ──────────────────────────────────────────────────
+  document.getElementById('fileLabel').addEventListener('click',()=>fileInput.click());
+
   fileInput.addEventListener('change',()=>{
     const f=fileInput.files[0];
     if(!f){selectedFile=null;fileNameDisplay.textContent='nothing picked';uploadBtn.style.display='none';return;}
