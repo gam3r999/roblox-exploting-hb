@@ -130,11 +130,18 @@ canvas#matrix{
 }
 .msg.file-msg img.inline-img{
   display:block;
-  max-width:100%;
-  max-height:200px;
-  margin-top:5px;
+  max-width:min(100%,420px);
+  max-height:320px;
+  margin-top:6px;
   border:1px solid var(--red2);
-  border-radius:2px;
+  border-radius:3px;
+  cursor:pointer;
+  object-fit:contain;
+  background:#0d0d0d;
+}
+.msg.file-msg img.inline-img:hover{
+  border-color:var(--red);
+  box-shadow:0 0 8px var(--red-glow);
 }
 .file-link{
   color:var(--red3);
@@ -544,6 +551,7 @@ html.shake{animation:fullScreenShake 0.5s infinite;}
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
 
 <script>
 const firebaseConfig={
