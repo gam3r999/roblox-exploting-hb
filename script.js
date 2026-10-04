@@ -118,19 +118,20 @@
 
   uploadBtn.addEventListener('click',async()=>{
     if(!selectedFile)return;
+    // capture locally so null-reset can't affect in-flight callbacks
+    const file=selectedFile;
     const username=(userEl.value||'Anonymous').trim();
 
     progressContainer.style.display='block';
     progressBar.style.width='0%';
-    progressLabel.textContent=`uploading ${selectedFile.name}...`;
+    progressLabel.textContent=`uploading ${file.name}...`;
     uploadBtn.style.display='none';
 
     const formData=new FormData();
-    formData.append('file',selectedFile);
+    formData.append('file',file);
     formData.append('upload_preset','rbx_uploads');
     formData.append('folder','rbx_chat');
     formData.append('tags','rbx_chat,expires_10d');
-    // resource_type goes in the URL for unsigned uploads, NOT in the body
 
     const xhr=new XMLHttpRequest();
     xhr.open('POST',`https://api.cloudinary.com/v1_1/kz95ob26/auto/upload`);
@@ -139,7 +140,7 @@
       if(e.lengthComputable){
         const pct=Math.round((e.loaded/e.total)*100);
         progressBar.style.width=pct+'%';
-        progressLabel.textContent=`[${pct}%] ${selectedFile.name} — ${formatBytes(e.loaded)} / ${formatBytes(e.total)}`;
+        progressLabel.textContent=`[${pct}%] ${file.name} — ${formatBytes(e.loaded)} / ${formatBytes(e.total)}`;
       }
     });
 
@@ -147,7 +148,7 @@
       if(xhr.status===200){
         const res=JSON.parse(xhr.responseText);
         const url=res.secure_url;
-        progressLabel.textContent=`done: ${selectedFile.name}`;
+        progressLabel.textContent=`done: ${file.name}`;
         setTimeout(()=>{progressContainer.style.display='none';},2000);
 
         const userIP=currentUserIP||await getUserIP();
@@ -157,11 +158,11 @@
 
         messagesRef.push({
           username,
-          text:`📎 ${selectedFile.name}`,
+          text:`📎 ${file.name}`,
           fileUrl:url,
-          fileName:selectedFile.name,
-          fileSize:selectedFile.size,
-          fileType:selectedFile.type||'',
+          fileName:file.name,
+          fileSize:file.size,
+          fileType:file.type||'',
           timestamp:Date.now(),
           deviceId,
           fingerprint:browserFingerprint,
