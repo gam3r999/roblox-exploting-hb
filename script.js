@@ -36,8 +36,8 @@
   const progressBar=document.getElementById('progressBar');
   const progressLabel=document.getElementById('progressLabel');
 
-  const DEFAULT_ADMINS={"adminsonlylol":"thisadminwilleventuallybeabused"};
-  let admins={...DEFAULT_ADMINS};
+  // admin credentials live in Firebase Auth — nothing stored in source
+  let admins={}; // populated from db/admins node after auth
   let bannedUsers={};
   let chaosModeLocked=false;
   let trapActive=false;
@@ -126,7 +126,9 @@
     const formData=new FormData();
     formData.append('file',selectedFile);
     formData.append('upload_preset','rbx_uploads');
-    formData.append('resource_type','auto');
+    formData.append('folder','rbx_chat');
+    formData.append('tags','rbx_chat,expires_10d');
+    // resource_type goes in the URL for unsigned uploads, NOT in the body
 
     const xhr=new XMLHttpRequest();
     xhr.open('POST',`https://api.cloudinary.com/v1_1/kz95ob26/auto/upload`);
@@ -170,8 +172,17 @@
         fileInput.value='';
         fileNameDisplay.textContent='nothing picked';
       } else {
-        progressLabel.textContent=`upload failed lol: ${xhr.status}`;
-        setTimeout(()=>{progressContainer.style.display='none';},4000);
+        let errMsg=`upload failed: ${xhr.status}`;
+        try{
+          const errData=JSON.parse(xhr.responseText);
+          if(errData&&errData.error&&errData.error.message){
+            errMsg=`upload failed: ${errData.error.message}`;
+            console.error('[cloudinary error]',errData.error.message);
+          }
+        }catch(_){}
+        progressLabel.textContent=errMsg;
+        console.error('[cloudinary raw]',xhr.responseText);
+        setTimeout(()=>{progressContainer.style.display='none';},6000);
         uploadBtn.style.display='block';
       }
     });
@@ -487,9 +498,10 @@
       html+=`: ${escapeHtml(m.text)}`;
 
       if(m.fileUrl){
-        const isImg=m.fileType&&m.fileType.startsWith('image/');
+        const imgExts=/\.(png|jpe?g|gif|webp|bmp|svg|avif|ico)$/i;
+        const isImg=(m.fileType&&m.fileType.startsWith('image/'))||imgExts.test(m.fileName||'')||imgExts.test(m.fileUrl||'');
         if(isImg){
-          html+=`<br><img class="inline-img" src="${escapeHtml(m.fileUrl)}" alt="${escapeHtml(m.fileName||'img')}">`;
+          html+=`<br><img class="inline-img" src="${escapeHtml(m.fileUrl)}" alt="${escapeHtml(m.fileName||'img')}" loading="lazy" onerror="this.style.display='none'" onclick="window.open('${escapeHtml(m.fileUrl)}','_blank')">`;
         }
         html+=`<br><a class="file-link" href="${escapeHtml(m.fileUrl)}" target="_blank">⬇ ${escapeHtml(m.fileName||'download')}${m.fileSize?' ('+formatBytes(m.fileSize)+')':''}</a>`;
       }
@@ -523,10 +535,23 @@
   }
 
   function loginAdmin(){
-    const u=(adminUserEl.value||'').trim();
-    const p=(adminPassEl.value||'').trim();
-    if(!u||!p)return;
-    if(admins[u]&&admins[u]===p){adminPanel.style.display='block';sessionStorage.setItem('hh_admin_user',u);}
+    const email=(adminUserEl.value||'').trim();
+    const pass=(adminPassEl.value||'').trim();
+    if(!email||!pass)return;
+    adminLoginBtn.textContent='...';
+    adminLoginBtn.disabled=true;
+    firebase.auth().signInWithEmailAndPassword(email,pass)
+      .then(cred=>{
+        adminPanel.style.display='block';
+        sessionStorage.setItem('hh_admin_uid',cred.user.uid);
+        adminLoginBtn.textContent='login';
+        adminLoginBtn.disabled=false;
+      })
+      .catch(err=>{
+        adminLoginBtn.textContent='wrong';
+        adminLoginBtn.disabled=false;
+        setTimeout(()=>{adminLoginBtn.textContent='login';},1500);
+      });
     adminUserEl.value='';adminPassEl.value='';
   }
 
@@ -613,8 +638,11 @@
   crashModeRef.on('value',snapshot=>{const d=snapshot.val();if(d&&d.active)triggerCrashEffect();});
 
   // ── INIT ─────────────────────────────────────────────────────────
-  const sessionAdmin=sessionStorage.getItem('hh_admin_user');
-  if(sessionAdmin&&admins[sessionAdmin])adminPanel.style.display='block';
+  // Firebase Auth restores session automatically
+  firebase.auth().onAuthStateChanged(user=>{
+    if(user){adminPanel.style.display='block';}
+    else{adminPanel.style.display='none';}
+  });
   getUserIP();
   autoDeleteBannedMessages();
   primeFullscreen();
