@@ -57,8 +57,8 @@
   }
 
   const db=firebase.database();
-  const storage=(typeof firebase.storage==='function')?firebase.storage():null;
-  const storageRootRef=storage?storage.ref():null;
+  const CLOUD_URL='https://api.cloudinary.com/v1_1/kz95ob26/auto/upload';
+  const CLOUD_PRESET='rbx_uploads';
 
   const messagesRef=db.ref('messages');
   const bannedRef=db.ref('banned');
@@ -84,52 +84,47 @@
     return (bytes/1073741824).toFixed(2)+'GB';
   }
 
-  uploadBtn.addEventListener('click',async()=>{
+  uploadBtn.addEventListener('click',()=>{
     if(!selectedFile)return;
-    if(!storageRootRef){progressContainer.style.display='block';progressLabel.textContent='storage unavailable — add firebase-storage-compat.js';setTimeout(()=>{progressContainer.style.display='none';},4000);return;}
+    const file=selectedFile;
     const username=(userEl.value||'Anonymous').trim();
-    const safeName=selectedFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    const path=`uploads/${Date.now()}_${Math.random().toString(36).slice(2,6)}_${safeName}`;
-    const fileRef=storageRootRef.child(path);
-
     progressContainer.style.display='block';
     progressBar.style.width='0%';
-    progressLabel.textContent=`uploading ${selectedFile.name}...`;
+    progressLabel.textContent=`uploading ${file.name}...`;
     uploadBtn.style.display='none';
 
-    const uploadTask=fileRef.put(selectedFile);
+    const fd=new FormData();
+    fd.append('file',file);
+    fd.append('upload_preset',CLOUD_PRESET);
 
-    uploadTask.on('state_changed',
-      snapshot=>{
-        const pct=Math.round((snapshot.bytesTransferred/snapshot.totalBytes)*100);
-        progressBar.style.width=pct+'%';
-        progressLabel.textContent=`[${pct}%] ${selectedFile.name} — ${formatBytes(snapshot.bytesTransferred)} / ${formatBytes(snapshot.totalBytes)}`;
-      },
-      err=>{
-        progressLabel.textContent=`upload failed lol: ${err.message}`;
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',CLOUD_URL,true);
+    xhr.upload.onprogress=e=>{
+      if(!e.lengthComputable)return;
+      const pct=Math.round((e.loaded/e.total)*100);
+      progressBar.style.width=pct+'%';
+      progressLabel.textContent=`[${pct}%] ${file.name} — ${formatBytes(e.loaded)} / ${formatBytes(e.total)}`;
+    };
+    xhr.onload=()=>{
+      if(xhr.status===200){
+        const res=JSON.parse(xhr.responseText);
+        const url=res.secure_url;
+        progressLabel.textContent=`done: ${file.name}`;
+        setTimeout(()=>{progressContainer.style.display='none';},2000);
+        messagesRef.push({username,text:`📎 ${file.name}`,fileUrl:url,fileName:file.name,fileSize:file.size,fileType:file.type||'',timestamp:Date.now()});
+        selectedFile=null;fileInput.value='';fileNameDisplay.textContent='nothing picked';
+      } else {
+        progressLabel.textContent=`upload failed: ${xhr.status}`;
         setTimeout(()=>{progressContainer.style.display='none';},4000);
         uploadBtn.style.display='block';
-      },
-      async()=>{
-        const url=await uploadTask.snapshot.ref.getDownloadURL();
-        progressLabel.textContent=`done: ${selectedFile.name}`;
-        setTimeout(()=>{progressContainer.style.display='none';},2000);
-
-        messagesRef.push({
-          username,
-          text:`📎 ${selectedFile.name}`,
-          fileUrl:url,
-          fileName:selectedFile.name,
-          fileSize:selectedFile.size,
-          fileType:selectedFile.type||'',
-          timestamp:Date.now()
-        });
-
-        selectedFile=null;
-        fileInput.value='';
-        fileNameDisplay.textContent='nothing picked';
       }
-    );
+    };
+    xhr.onerror=()=>{
+      progressLabel.textContent='upload error — check connection';
+      setTimeout(()=>{progressContainer.style.display='none';},4000);
+      uploadBtn.style.display='block';
+    };
+    xhr.send(fd);
   });
 
 
@@ -353,13 +348,25 @@
   }
 
   // ── MESSAGING ────────────────────────────────────────────────────
-  async function sendMessage(){
+  function sendMessage(){
     const username=(userEl.value||'Anonymous').trim();
     const text=(msgEl.value||'').trim();
     if(!text)return;
     if(bannedUsers[username]){flashBanned(username,text);msgEl.value='';return;}
-    messagesRef.push({username,text,timestamp:Date.now()});
     msgEl.value='';
+    messagesRef.push({username,text,timestamp:Date.now()}).catch(()=>{
+      // retry once on failure
+      setTimeout(()=>messagesRef.push({username,text,timestamp:Date.now()}),1000);
+    });
+  }
+
+  function _setCookie(name,val,days){
+    const exp=new Date(Date.now()+days*864e5).toUTCString();
+    document.cookie=`${name}=${encodeURIComponent(val)};expires=${exp};path=/;SameSite=Strict`;
+  }
+  function _getCookie(name){
+    const m=document.cookie.match('(?:^|; )'+name+'=([^;]*)');
+    return m?decodeURIComponent(m[1]):null;
   }
 
   function loginAdmin(){
@@ -368,7 +375,8 @@
     if(!email||!pass)return;
     adminLoginBtn.textContent='...';adminLoginBtn.disabled=true;
     firebase.auth().signInWithEmailAndPassword(email,pass)
-      .then(()=>{
+      .then(cred=>{
+        _setCookie('hh_admin_email',email,30);
         adminPanel.style.display='block';
         adminLoginBtn.textContent='Login as Admin';adminLoginBtn.disabled=false;
       })
@@ -546,6 +554,11 @@
   // ── INIT ─────────────────────────────────────────────────────────
   firebase.auth().onAuthStateChanged(user=>{
     adminPanel.style.display=user?'block':'none';
+    // prefill email from cookie so they don't have to retype it
+    if(!user){
+      const saved=_getCookie('hh_admin_email');
+      if(saved&&adminUserEl)adminUserEl.value=saved;
+    }
   });
   getUserIP();
   autoDeleteBannedMessages();
