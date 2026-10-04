@@ -202,7 +202,10 @@
   // ── ALT / FINGERPRINT DETECTION ─────────────────────────────────
   async function checkForAltAccount(username,userIP){
     return new Promise(resolve=>{
+      // timeout after 4s so a Firebase rules block never hangs the send
+      const fallback=setTimeout(()=>resolve({isAlt:false,originalUsername:null}),4000);
       fingerprintsRef.once('value',snapshot=>{
+        clearTimeout(fallback);
         const fp=snapshot.val()||{};
         let isAlt=false,originalUsername=null;
         for(const[user,data] of Object.entries(fp)){
@@ -218,9 +221,11 @@
   }
 
   function saveUserFingerprint(username,userIP){
-    fingerprintsRef.child(username).set({
-      fingerprint:browserFingerprint,deviceId,ip:userIP,timestamp:Date.now()
-    });
+    try{
+      fingerprintsRef.child(username).set({
+        fingerprint:browserFingerprint,deviceId,ip:userIP,timestamp:Date.now()
+      });
+    }catch(e){}
   }
 
   function autoDeleteBannedMessages(){
