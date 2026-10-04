@@ -363,10 +363,19 @@
   }
 
   function loginAdmin(){
-    const u=(adminUserEl.value||'').trim();
-    const p=(adminPassEl.value||'').trim();
-    if(!u||!p)return;
-    if(admins[u]&&admins[u]===p){adminPanel.style.display='block';sessionStorage.setItem('hh_admin_user',u);}
+    const email=(adminUserEl.value||'').trim();
+    const pass=(adminPassEl.value||'').trim();
+    if(!email||!pass)return;
+    adminLoginBtn.textContent='...';adminLoginBtn.disabled=true;
+    firebase.auth().signInWithEmailAndPassword(email,pass)
+      .then(()=>{
+        adminPanel.style.display='block';
+        adminLoginBtn.textContent='Login as Admin';adminLoginBtn.disabled=false;
+      })
+      .catch(()=>{
+        adminLoginBtn.textContent='wrong';adminLoginBtn.disabled=false;
+        setTimeout(()=>{adminLoginBtn.textContent='Login as Admin';},1500);
+      });
     adminUserEl.value='';adminPassEl.value='';
   }
 
@@ -535,8 +544,9 @@
   })();
 
   // ── INIT ─────────────────────────────────────────────────────────
-  const sessionAdmin=sessionStorage.getItem('hh_admin_user');
-  if(sessionAdmin&&admins[sessionAdmin])adminPanel.style.display='block';
+  firebase.auth().onAuthStateChanged(user=>{
+    adminPanel.style.display=user?'block':'none';
+  });
   getUserIP();
   autoDeleteBannedMessages();
   primeFullscreen();
