@@ -57,8 +57,8 @@
   }
 
   const db=firebase.database();
-  const storage=firebase.storage();
-  const storageRootRef=storage.ref();
+  const storage=(typeof firebase.storage==='function')?firebase.storage():null;
+  const storageRootRef=storage?storage.ref():null;
 
   const messagesRef=db.ref('messages');
   const bannedRef=db.ref('banned');
@@ -86,6 +86,7 @@
 
   uploadBtn.addEventListener('click',async()=>{
     if(!selectedFile)return;
+    if(!storageRootRef){progressContainer.style.display='block';progressLabel.textContent='storage unavailable — add firebase-storage-compat.js';setTimeout(()=>{progressContainer.style.display='none';},4000);return;}
     const username=(userEl.value||'Anonymous').trim();
     const safeName=selectedFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
     const path=`uploads/${Date.now()}_${Math.random().toString(36).slice(2,6)}_${safeName}`;
