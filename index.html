@@ -493,8 +493,8 @@ html.shake{animation:fullScreenShake 0.5s infinite;}
   </div>
 
   <div id="upload-row">
-    <input type="file" id="fileInput" accept="*/*">
-    <label for="fileInput" id="fileLabel">+ attach</label>
+    <input type="file" id="fileInput" accept="*/*" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;z-index:-1;">
+    <button id="fileLabel" type="button">+ attach</button>
     <span id="fileNameDisplay">nothing picked</span>
     <button id="uploadBtn">UPLOAD</button>
   </div>
